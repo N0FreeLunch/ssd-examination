@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: Examination API Types
+  version: 1.0.0
+components:
+  schemas:
+    HelloResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Hello, World!"
+      required:
+        - message

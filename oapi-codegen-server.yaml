@@ -1,0 +1,8 @@
+# oapi-codegen-server.yaml
+package: api
+generate:
+  chi-server: true
+  strict-server: true
+output: internal/api/server.gen.go
+import-mapping:
+  ./types.yaml: examination/internal/types

@@ -1,0 +1,7 @@
+# oapi-codegen-types.yaml
+package: types
+generate:
+  models: true
+output-options:
+  skip-prune: true
+output: internal/types/types.gen.go
