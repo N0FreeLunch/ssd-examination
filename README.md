@@ -70,6 +70,17 @@ ln -s ../examination-specs sdd-examination-spec
 > ```bash
 > ln -s ../my-custom-specs sdd-examination-spec
 > ```
+>
+> **Warning: Git Ignore (Crucial)**
+> To prevent accidental commits of the specification folder (which would duplicate data and break the separation of concerns), you **MUST** add the symlink name to `.gitignore`.
+>
+> ```bash
+> # Append the symlink name to .gitignore
+> echo "sdd-examination-spec" >> .gitignore
+>
+> # If you used a custom name, add that as well
+> # echo "my-custom-specs" >> .gitignore
+> ```
 
 ### 3. Verification
 Verify that the link is correctly established:
@@ -80,16 +91,6 @@ ls -l sdd-examination-spec
 # e.g., sdd-examination-spec -> ../examination-specs
 ```
 
-### 4. Git Ignore (Crucial)
-To prevent accidental commits of the specification folder (which would duplicate data and break the separation of concerns), you **MUST** add the symlink name to `.gitignore`.
-
-```bash
-# Append the symlink name to .gitignore
-echo "sdd-examination-spec" >> .gitignore
-
-# If you used a custom name, add that as well
-# echo "my-custom-specs" >> .gitignore
-```
 
 ## Running the Application
 
