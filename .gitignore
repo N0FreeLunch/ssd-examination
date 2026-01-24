@@ -38,3 +38,6 @@ go.work
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Local Symlinks
+examination-spec

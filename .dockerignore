@@ -1,0 +1,27 @@
+# Version Control
+.git
+.gitignore
+
+# Editor Config
+.vscode
+.idea
+
+# Build Output
+bin/
+tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Dependencies
+vendor/
+
+# Spec Symlink (Crucial to exclude)
+sdd-examination-spec
+
+# Application Specific
+*.db
+*.db-journal
+*.db-wal

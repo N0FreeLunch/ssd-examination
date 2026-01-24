@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Remove Spec Symlink
+      # The symlink points to a directory outside the repo, which won't exist in CI.
+      # We remove it to prevent any tools from getting confused by a broken link.
+      run: rm sdd-examination-spec || true
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build Docker Image
+      # The .dockerignore file should handle the exclusion of the symlink.
+      run: docker build . --file Dockerfile --tag examination:latest

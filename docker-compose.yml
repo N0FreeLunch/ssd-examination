@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_PATH=/data/examination.db
+      # Connect to local MinIO. 
+      # force_path_style=true is usually needed for MinIO.
+      # skip_verify=true might be needed if using self-signed certs (though http usually fine).
+      - REPLICA_URL=s3://examination-bucket/db?endpoint=http://minio:9000&force_path_style=true
+      - LITESTREAM_ACCESS_KEY_ID=minioadmin
+      - LITESTREAM_SECRET_ACCESS_KEY=minioadmin
+    volumes:
+      # Mount data directory to persist the SQLite DB file locally and across container restarts
+      - ./data:/data
+    depends_on:
+      - minio
+      - createbuckets
+    restart: always
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+
+  # Helper service to create the bucket automatically
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c " # Wait for MinIO to be ready until /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; do
+        echo 'Waiting for MinIO...'
+        sleep 1
+      done;
+
+      # Create bucket if it doesn't exist /usr/bin/mc mb --ignore-existing myminio/examination-bucket; echo 'Bucket created'; exit 0; "
+
+volumes:
+  minio_data:

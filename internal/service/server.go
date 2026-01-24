@@ -14,6 +14,6 @@ func NewServer() *Server {
 
 func (s *Server) GetHello(ctx context.Context, request api.GetHelloRequestObject) (api.GetHelloResponseObject, error) {
 	return api.GetHello200JSONResponse(types.HelloResponse{
-		Message: "Hello, World!",
+		Message: "Hello 재호",
 	}), nil
 }
