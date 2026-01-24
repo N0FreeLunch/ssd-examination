@@ -89,3 +89,13 @@ echo "sdd-examination-spec" >> .gitignore
 # If you used a custom name, add that as well
 # echo "my-custom-specs" >> .gitignore
 ```
+
+## Running the Application
+
+For detailed instructions on how to run and verify the application, please refer to the [Server Execution Guide](sdd-examination-spec/RUNNING.md) in the specification repository.
+
+**Summary:**
+```bash
+make run
+```
+
