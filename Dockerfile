@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 # Stage 1: Builder
 # ------------------------------------------------------------------------------
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -53,8 +53,16 @@ set -e
 
 # If REPLICA_URL is set, run with litestream
 if [ -n "\$REPLICA_URL" ]; then
-    echo "Starting with Litestream replication to \$REPLICA_URL"
-    exec litestream replicate -exec "/app/server"
+    echo "Generating Litestream config..."
+    cat > /etc/litestream.yml <<YAML
+dbs:
+  - path: \${DB_PATH}
+    replicas:
+      - url: \${REPLICA_URL}
+YAML
+    
+    echo "Starting with Litestream replication..."
+    exec litestream replicate -exec "/app/server" -config /etc/litestream.yml
 else
     echo "Starting server directly (no replication)"
     exec /app/server
