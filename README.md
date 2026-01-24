@@ -70,7 +70,7 @@ ln -s ../examination-specs sdd-examination-spec
 > ```bash
 > ln -s ../my-custom-specs sdd-examination-spec
 > ```
->
+
 > [!IMPORTANT]
 > **Git Ignore (Crucial)**
 > To prevent accidental commits of the specification folder (which would duplicate data and break the separation of concerns), you **MUST** add the symlink name to `.gitignore`.
