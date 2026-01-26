@@ -38,6 +38,13 @@ When creating a **Fine-grained Personal Access Token**, ensure you select **both
 -   **Workflows**: Read and write
 -   **Metadata**: Read-only (Required)
 
+### Local Credential Configuration
+To ensure correct authentication context when working with multiple repositories, configure git to use the full HTTP path for credentials:
+
+```bash
+git config --local credential.useHttpPath true
+```
+
 ## Getting Started
 
 ### 1. Clone the Repositories
