@@ -5,6 +5,7 @@ go 1.24.0
 toolchain go1.24.12
 
 require (
+	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9
 	entgo.io/ent v0.14.5
 	github.com/go-chi/chi/v5 v5.2.4
 	github.com/stretchr/testify v1.11.1
@@ -12,7 +13,6 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
