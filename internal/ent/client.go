@@ -1524,7 +1524,8 @@ func (c *UnitClient) QueryProblems(_m *Unit) *ProblemQuery {
 
 // Hooks returns the client hooks.
 func (c *UnitClient) Hooks() []Hook {
-	return c.hooks.Unit
+	hooks := c.hooks.Unit
+	return append(hooks[:len(hooks):len(hooks)], unit.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.

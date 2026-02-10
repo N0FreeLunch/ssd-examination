@@ -2,7 +2,84 @@
 
 package runtime
 
-// The schema-stitching logic is generated in examination/internal/ent/runtime.go
+import (
+	"examination/internal/ent/choice"
+	"examination/internal/ent/exam"
+	"examination/internal/ent/problem"
+	"examination/internal/ent/problemtranslation"
+	"examination/internal/ent/schema"
+	"examination/internal/ent/section"
+	"examination/internal/ent/topic"
+	"examination/internal/ent/unit"
+)
+
+// The init function reads all schema descriptors with runtime code
+// (default values, validators, hooks and policies) and stitches it
+// to their package variables.
+func init() {
+	choiceFields := schema.Choice{}.Fields()
+	_ = choiceFields
+	// choiceDescContent is the schema descriptor for content field.
+	choiceDescContent := choiceFields[0].Descriptor()
+	// choice.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	choice.ContentValidator = choiceDescContent.Validators[0].(func(string) error)
+	// choiceDescIsCorrect is the schema descriptor for is_correct field.
+	choiceDescIsCorrect := choiceFields[1].Descriptor()
+	// choice.DefaultIsCorrect holds the default value on creation for the is_correct field.
+	choice.DefaultIsCorrect = choiceDescIsCorrect.Default.(bool)
+	examFields := schema.Exam{}.Fields()
+	_ = examFields
+	// examDescTitle is the schema descriptor for title field.
+	examDescTitle := examFields[0].Descriptor()
+	// exam.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	exam.TitleValidator = examDescTitle.Validators[0].(func(string) error)
+	// examDescIsActive is the schema descriptor for is_active field.
+	examDescIsActive := examFields[3].Descriptor()
+	// exam.DefaultIsActive holds the default value on creation for the is_active field.
+	exam.DefaultIsActive = examDescIsActive.Default.(bool)
+	problemFields := schema.Problem{}.Fields()
+	_ = problemFields
+	// problemDescDifficulty is the schema descriptor for difficulty field.
+	problemDescDifficulty := problemFields[1].Descriptor()
+	// problem.DefaultDifficulty holds the default value on creation for the difficulty field.
+	problem.DefaultDifficulty = problemDescDifficulty.Default.(int)
+	problemtranslationFields := schema.ProblemTranslation{}.Fields()
+	_ = problemtranslationFields
+	// problemtranslationDescLocale is the schema descriptor for locale field.
+	problemtranslationDescLocale := problemtranslationFields[0].Descriptor()
+	// problemtranslation.LocaleValidator is a validator for the "locale" field. It is called by the builders before save.
+	problemtranslation.LocaleValidator = problemtranslationDescLocale.Validators[0].(func(string) error)
+	// problemtranslationDescTitle is the schema descriptor for title field.
+	problemtranslationDescTitle := problemtranslationFields[1].Descriptor()
+	// problemtranslation.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	problemtranslation.TitleValidator = problemtranslationDescTitle.Validators[0].(func(string) error)
+	// problemtranslationDescContent is the schema descriptor for content field.
+	problemtranslationDescContent := problemtranslationFields[2].Descriptor()
+	// problemtranslation.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	problemtranslation.ContentValidator = problemtranslationDescContent.Validators[0].(func(string) error)
+	sectionFields := schema.Section{}.Fields()
+	_ = sectionFields
+	// sectionDescTitle is the schema descriptor for title field.
+	sectionDescTitle := sectionFields[0].Descriptor()
+	// section.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	section.TitleValidator = sectionDescTitle.Validators[0].(func(string) error)
+	topicFields := schema.Topic{}.Fields()
+	_ = topicFields
+	// topicDescTitle is the schema descriptor for title field.
+	topicDescTitle := topicFields[0].Descriptor()
+	// topic.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	topic.TitleValidator = topicDescTitle.Validators[0].(func(string) error)
+	unitHooks := schema.Unit{}.Hooks()
+	unit.Hooks[0] = unitHooks[0]
+	unitFields := schema.Unit{}.Fields()
+	_ = unitFields
+	// unitDescTitle is the schema descriptor for title field.
+	unitDescTitle := unitFields[0].Descriptor()
+	// unit.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	unit.TitleValidator = unitDescTitle.Validators[0].(func(string) error)
+	versionruleFields := schema.VersionRule{}.Fields()
+	_ = versionruleFields
+}
 
 const (
 	Version = "v0.14.5"                                         // Version of ent codegen.

@@ -8,6 +8,7 @@ import (
 
 	"examination/internal/ent"
 	"examination/internal/ent/exam"
+	"examination/internal/ent/unit"
 
 	"entgo.io/ent/dialect"
 	"modernc.org/sqlite"
@@ -107,5 +108,35 @@ func main() {
 				fmt.Printf("      Unit: %s\n", u.Title)
 			}
 		}
+	}
+
+	// 4. Verify Inclusive Parent Hook (Unit)
+	fmt.Println("\n>> Verifying Exclusive Parent Hook...")
+	// Try creating a Unit with BOTH Topic and Section
+	u2, err := client.Unit.Create().
+		SetTitle("Hook Test Unit").
+		SetSeq(2).
+		SetExam(khExam).
+		SetSection(sectA). // Setting Section
+		SetTopic(top1).    // Setting Topic (Should clear Section)
+		Save(ctx)
+	if err != nil {
+		log.Fatalf("failed creating hook test unit: %v", err)
+	}
+
+	// Reload u2 to check relations
+	u2, err = client.Unit.Query().
+		Where(unit.ID(u2.ID)).
+		WithSection().
+		WithTopic().
+		Only(ctx)
+	if err != nil {
+		log.Fatalf("failed reloading unit: %v", err)
+	}
+
+	if u2.Edges.Topic != nil && u2.Edges.Section == nil {
+		fmt.Println(">> PASSED: Section was correctly cleared because Topic was set.")
+	} else {
+		log.Fatalf(">> FAILED: Section was NOT cleared! Topic: %v, Section: %v", u2.Edges.Topic, u2.Edges.Section)
 	}
 }
