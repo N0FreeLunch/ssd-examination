@@ -1,50 +1,84 @@
-version: '3.8'
-
 services:
+  # 1. Main Application
   app:
-    build: .
+    container_name: examination-app-local
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: always
     ports:
       - "8180:8080"
     environment:
-      - DB_PATH=/data/examination.db
-      # Connect to local MinIO. 
-      # force_path_style=true is usually needed for MinIO.
-      # skip_verify=true might be needed if using self-signed certs (though http usually fine).
-      - REPLICA_URL=s3://examination-bucket/db?endpoint=http://minio:9000&force_path_style=true
+      - DATABASE_URL=sqlite://file:/data/local.db?_pragma=foreign_keys(1)&cache=shared&mode=rwc
+      - DB_PATH=/data/local.db
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=admin
+    volumes:
+      - ./:/app
+      - ./data:/data # Shared DB volume
+      - go-modules:/go/pkg/mod # Module caching
+    depends_on:
+      - mailpit
+      - litestream
+      - minio
+
+  # 2. SQLite Sidecar (Litestream)
+  litestream:
+    container_name: examination-litestream-local
+    image: litestream/litestream:latest
+    command: replicate -config /etc/litestream.yml
+    volumes:
+      - ./data:/data # Shared DB volume
+      - ./litestream.dev.yml:/etc/litestream.yml
+    environment:
       - LITESTREAM_ACCESS_KEY_ID=minioadmin
       - LITESTREAM_SECRET_ACCESS_KEY=minioadmin
-    volumes:
-      # Mount data directory to persist the SQLite DB file locally and across container restarts
-      - ./data:/data
     depends_on:
       - minio
-      - createbuckets
-    restart: always
+
+  # 3. Helpers
+  mailpit:
+    container_name: examination-mailpit
+    image: axllent/mailpit
+    ports:
+      - "8125:8025"
+      - "1025:1025"
+
+  adminer:
+    container_name: examination-adminer
+    image: adminer:latest
+    ports:
+      - "8181:8080"
+    volumes:
+      - ./data:/data
+      - ./infra/adminer/index.php:/var/www/html/index.php
+    environment:
+      - ADMINER_DEFAULT_SERVER=sqlite
+      - ADMINER_DESIGN=nette
 
   minio:
+    container_name: examination-minio
     image: minio/minio
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9100:9000"
+      - "9101:9001"
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
     volumes:
-      - minio_data:/data
+      - minio-data:/data
 
-  # Helper service to create the bucket automatically
-  createbuckets:
+  # Setup MinIO Buckets automatically
+  setup-minio:
     image: minio/mc
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " # Wait for MinIO to be ready until /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; do
-        echo 'Waiting for MinIO...'
-        sleep 1
-      done;
-
-      # Create bucket if it doesn't exist /usr/bin/mc mb --ignore-existing myminio/examination-bucket; echo 'Bucket created'; exit 0; "
+      /bin/sh -c " until (mc alias set minio http://minio:9000 minioadmin minioadmin); do echo '...waiting for minio...'; sleep 1; done; mc mb minio/backups || echo 'Bucket already exists'; exit 0; "
 
 volumes:
-  minio_data:
+  go-modules:
+  minio-data:
