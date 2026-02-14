@@ -7,8 +7,13 @@
 *.db-wal
 *.db-shm
 
+# Keys & Certificates
+*.pem
+
 # Data Directory (Local storage)
 data/
+minio-data/
+sqlite-data/
 
 # Logs
 *.log
