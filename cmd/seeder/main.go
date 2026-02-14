@@ -31,7 +31,7 @@ func main() {
 	if dbPath == "" {
 		dbPath = "file:data/local.db?cache=shared&_pragma=foreign_keys(1)"
 	} else {
-		dbPath = fmt.Sprintf("file:%s?_pragma=foreign_keys(1)", dbPath)
+		dbPath = fmt.Sprintf("file:%s?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)", dbPath)
 	}
 
 	client, err := ent.Open("sqlite3", dbPath)

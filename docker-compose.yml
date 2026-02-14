@@ -21,9 +21,12 @@ services:
       - ./data:/data # Shared DB volume
       - go-modules:/go/pkg/mod # Module caching
     depends_on:
-      - mailpit
-      - litestream
-      - minio
+      mailpit:
+        condition: service_started
+      minio:
+        condition: service_started
+      restore-db:
+        condition: service_completed_successfully
 
   # 2. SQLite Sidecar (Litestream)
   litestream:
@@ -37,7 +40,10 @@ services:
       - LITESTREAM_ACCESS_KEY_ID=minioadmin
       - LITESTREAM_SECRET_ACCESS_KEY=minioadmin
     depends_on:
-      - minio
+      minio:
+        condition: service_started
+      restore-db:
+        condition: service_completed_successfully
 
   # 3. Helpers
   mailpit:
@@ -58,6 +64,9 @@ services:
     environment:
       - ADMINER_DEFAULT_SERVER=sqlite
       - ADMINER_DESIGN=nette
+    depends_on:
+      restore-db:
+        condition: service_completed_successfully
 
   minio:
     container_name: examination-minio
@@ -79,6 +88,22 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c " until (mc alias set minio http://minio:9000 minioadmin minioadmin); do echo '...waiting for minio...'; sleep 1; done; mc mb minio/backups || echo 'Bucket already exists'; exit 0; "
+
+  # 4. Maintenance / Init
+  restore-db:
+    image: litestream/litestream:latest
+    container_name: examination-db-restore
+    entrypoint: /scripts/restore-db.sh
+    volumes:
+      - ./data:/data
+      - ./infra/config/litestream.local.yml:/etc/litestream.yml
+      - ./infra/docker/restore-db.sh:/scripts/restore-db.sh:ro
+    environment:
+      - LITESTREAM_ACCESS_KEY_ID=minioadmin
+      - LITESTREAM_SECRET_ACCESS_KEY=minioadmin
+    depends_on:
+      setup-minio:
+        condition: service_completed_successfully
 
 volumes:
   go-modules:
