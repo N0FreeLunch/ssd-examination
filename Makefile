@@ -8,7 +8,7 @@ seed-admin:
 
 seed-exam-preview:
 	@echo "Seeding exam preview data..."
-	@docker exec -it examination-app-local go run cmd/seeder/main.go -seed=exam_preview -clean
+	@docker exec -it examination-app-local go run cmd/seeder/main.go -name=exam_preview -clean
 
 # Docker Compose Helpers
 up:

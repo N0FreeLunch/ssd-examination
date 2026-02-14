@@ -32,7 +32,7 @@ services:
     command: replicate -config /etc/litestream.yml
     volumes:
       - ./data:/data # Shared DB volume
-      - ./litestream.dev.yml:/etc/litestream.yml
+      - ./infra/config/litestream.local.yml:/etc/litestream.yml
     environment:
       - LITESTREAM_ACCESS_KEY_ID=minioadmin
       - LITESTREAM_SECRET_ACCESS_KEY=minioadmin

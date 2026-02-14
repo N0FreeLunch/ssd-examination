@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -29,6 +30,8 @@ func main() {
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
 		dbPath = "file:data/local.db?cache=shared&_pragma=foreign_keys(1)"
+	} else {
+		dbPath = fmt.Sprintf("file:%s?_pragma=foreign_keys(1)", dbPath)
 	}
 
 	client, err := ent.Open("sqlite3", dbPath)
