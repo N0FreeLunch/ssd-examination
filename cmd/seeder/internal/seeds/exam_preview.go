@@ -3,130 +3,245 @@ package seeds
 import (
 	"context"
 	"examination/internal/ent"
+	"examination/internal/ent/choice"
+	"examination/internal/ent/exam"
+	"examination/internal/ent/problem"
+	"examination/internal/ent/problemtranslation"
+	"examination/internal/ent/section"
+	"examination/internal/ent/unit"
 	"fmt"
+	"log"
 	"time"
 )
 
+// SeedExamPreview seeds data for the Exam Preview prototype scenario.
 func SeedExamPreview(ctx context.Context, client *ent.Client) error {
-	// 1. Create Exam
-	e, err := client.Exam.Create().
-		SetTitle("Distributed Systems 101").
-		SetDescription("Preview exam for data verification").
+	const examTitle = "Distributed Systems 101"
+
+	// 1. Clean up existing exam data to avoid duplicates (simplified cleanup)
+	// Find existing exam by title
+	// Note: In a real seeder, we might want to be more careful.
+	// For now, if it exists, we delete it and recreate.
+	existingExam, err := client.Exam.Query().
+		Where(exam.TitleEQ(examTitle)).
+		Only(ctx)
+
+	if err == nil {
+		log.Printf("Deleting existing exam: %s", existingExam.Title)
+
+		// Manual Cascade Delete (Bottom-Up)
+		// 1. Choices
+		_, err := client.Choice.Delete().Where(
+			choice.HasProblemTranslationWith(
+				problemtranslation.HasProblemWith(
+					problem.HasUnitWith(
+						unit.HasExamWith(exam.ID(existingExam.ID)),
+					),
+				),
+			),
+		).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed deleting choices: %w", err)
+		}
+
+		// 2. Translations
+		_, err = client.ProblemTranslation.Delete().Where(
+			problemtranslation.HasProblemWith(
+				problem.HasUnitWith(
+					unit.HasExamWith(exam.ID(existingExam.ID)),
+				),
+			),
+		).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed deleting translations: %w", err)
+		}
+
+		// 3. Problems
+		_, err = client.Problem.Delete().Where(
+			problem.HasUnitWith(
+				unit.HasExamWith(exam.ID(existingExam.ID)),
+			),
+		).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed deleting problems: %w", err)
+		}
+
+		// 4. Units
+		_, err = client.Unit.Delete().Where(
+			unit.HasExamWith(exam.ID(existingExam.ID)),
+		).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed deleting units: %w", err)
+		}
+
+		// 5. Sections
+		_, err = client.Section.Delete().Where(
+			section.HasExamWith(exam.ID(existingExam.ID)),
+		).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed deleting sections: %w", err)
+		}
+
+		// 6. Exam
+		if err := client.Exam.DeleteOne(existingExam).Exec(ctx); err != nil {
+			return fmt.Errorf("failed deleting existing exam: %w", err)
+		}
+	} else if !ent.IsNotFound(err) {
+		return fmt.Errorf("failed querying existing exam: %w", err)
+	}
+
+	// 2. Create Exam
+	exam, err := client.Exam.Create().
+		SetTitle(examTitle).
+		SetDescription("An introductory exam covering fundamental concepts of distributed systems.").
 		SetTimeLimit(60).
+		SetIsActive(true).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed creating exam: %w", err)
 	}
+	log.Printf("Created Exam: %s (ID: %d)", exam.Title, exam.ID)
 
-	// 2. Create Section
-	s, err := client.Section.Create().
+	// 3. Create Section
+	section, err := client.Section.Create().
 		SetTitle("Data Consistency").
 		SetSeq(1).
-		SetExam(e).
+		SetExam(exam). // Use ID or Edge
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed creating section: %w", err)
 	}
+	log.Printf("Created Section: %s", section.Title)
 
-	// Helper to create full question stack
-	createQuestion := func(seq int, title, content, explanation string, choices []string, correctIdx int, codeBlock string) error {
-		// Unit
-		u, err := client.Unit.Create().
-			SetTitle(title).
-			SetSeq(seq).
-			SetExam(e).
-			SetSection(s).
-			Save(ctx)
-		if err != nil {
-			return fmt.Errorf("failed creating unit %d: %w", seq, err)
-		}
-
-		// Problem
-		p, err := client.Problem.Create().
-			SetUnit(u).
-			SetType("SOURCE").
-			SetCreatedAt(time.Now()).
-			Save(ctx)
-		if err != nil {
-			return fmt.Errorf("failed creating problem %d: %w", seq, err)
-		}
-
-		// Translation
-		finalContent := content
-		if codeBlock != "" {
-			finalContent += "\n\n" + codeBlock
-		}
-
-		pt, err := client.ProblemTranslation.Create().
-			SetProblem(p).
-			SetLocale("en").
-			SetTitle(title).
-			SetContent(finalContent).
-			SetExplanation(explanation).
-			Save(ctx)
-		if err != nil {
-			return fmt.Errorf("failed creating translation %d: %w", seq, err)
-		}
-
-		// Choices
-		builders := make([]*ent.ChoiceCreate, len(choices))
-		for i, c := range choices {
-			builders[i] = client.Choice.Create().
-				SetProblemTranslation(pt).
-				SetContent(c).
-				SetSeq(i + 1).
-				SetIsCorrect(i == correctIdx)
-		}
-		if _, err := client.Choice.CreateBulk(builders...).Save(ctx); err != nil {
-			return fmt.Errorf("failed creating choices for unit %d: %w", seq, err)
-		}
-
-		return nil
+	// 4. Create Units (Problems)
+	// Unit 1: Simple Multiple Choice
+	u1, err := client.Unit.Create().
+		SetTitle("CAP Theorem Basics").
+		SetSeq(1).
+		SetExam(exam).
+		SetSection(section).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating unit 1: %w", err)
 	}
 
-	// Unit 1: Simple
-	if err := createQuestion(1,
-		"CAP Theorem",
-		"According to the CAP theorem, which two properties can be satisfied simultaneously in the presence of validation?",
-		"In a distributed system with partitions (P), you must choose between Consistency (C) and Availability (A).",
-		[]string{"Consistency & Availability", "Availability & Partition Tolerance", "Consistency & Partition Tolerance", "None of the above"},
-		2, // CP is common choice for strong consistency systems
-		"",
-	); err != nil {
-		return err
+	p1, err := client.Problem.Create().
+		SetUnit(u1).
+		SetType("SOURCE").
+		SetDifficulty(1).
+		SetCreatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating problem 1: %w", err)
 	}
 
-	// Unit 2: Long Text
-	longText := `Eventual consistency is a consistency model used in distributed computing to achieve high availability that informally guarantees that, if no new updates are made to a given data item, eventually all accesses to that item will return the last updated value.
-
-Which of the following scenarios BEST describes a system prioritizing Eventual Consistency?`
-	if err := createQuestion(2,
-		"Eventual Consistency",
-		longText,
-		"DNS is a classic example where changes take time to propagate, but eventually all resolvers see the new record.",
-		[]string{
-			"A banking ledger transaction system.",
-			"A real-time stock trading engine.",
-			"A DNS change propagation system.",
-			"A pacemaker control system.",
-		},
-		2,
-		"",
-	); err != nil {
-		return err
+	pt1, err := client.ProblemTranslation.Create().
+		SetProblem(p1).
+		SetLocale("en").
+		SetTitle("CAP Theorem").
+		SetContent("In the CAP theorem, which two properties cannot be simultaneously guaranteed in a distributed system with network partitions?").
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating translation 1: %w", err)
 	}
 
-	// Unit 3: Code
-	codeBlock := "```go\nfunc main() {\n\tch := make(chan int, 1)\n\tch <- 1\n\tfmt.Println(<-ch)\n}\n```"
-	if err := createQuestion(3,
-		"Go Channels",
-		"What is the output of the following Go code?",
-		"The channel is buffered with size 1. The send does not block because there is space. The receive reads the value.",
-		[]string{"1", "Deadlock", "Runtime Panic", "Compilation Error"},
-		0,
-		codeBlock,
-	); err != nil {
-		return err
+	_, err = client.Choice.CreateBulk(
+		client.Choice.Create().SetProblemTranslation(pt1).SetContent("Consistency & Availability").SetIsCorrect(true).SetSeq(1),
+		client.Choice.Create().SetProblemTranslation(pt1).SetContent("Availability & Partition Tolerance").SetIsCorrect(false).SetSeq(2),
+		client.Choice.Create().SetProblemTranslation(pt1).SetContent("Consistency & Partition Tolerance").SetIsCorrect(false).SetSeq(3),
+		client.Choice.Create().SetProblemTranslation(pt1).SetContent("Reliability & Scalability").SetIsCorrect(false).SetSeq(4),
+	).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating choices 1: %w", err)
+	}
+
+	// Unit 2: Markdown Content (Eventual Consistency)
+	u2, err := client.Unit.Create().
+		SetTitle("Eventual Consistency").
+		SetSeq(2).
+		SetExam(exam).
+		SetSection(section).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating unit 2: %w", err)
+	}
+
+	p2, err := client.Problem.Create().
+		SetUnit(u2).
+		SetType("SOURCE").
+		SetDifficulty(2).
+		SetCreatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating problem 2: %w", err)
+	}
+
+	const mdContent = `
+### Understanding Eventual Consistency
+
+Eventual consistency is a consistency model used in distributed computing to achieve high availability. It guarantees that, if no new updates are made to a given data item, eventually all accesses to that item will return the last updated value.
+
+**Which of the following statements is true regarding Eventual Consistency?**
+`
+
+	pt2, err := client.ProblemTranslation.Create().
+		SetProblem(p2).
+		SetLocale("en").
+		SetTitle("Eventual Consistency Details").
+		SetContent(mdContent).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating translation 2: %w", err)
+	}
+
+	_, err = client.Choice.CreateBulk(
+		client.Choice.Create().SetProblemTranslation(pt2).SetContent("Data is instantly replicated to all nodes.").SetIsCorrect(false).SetSeq(1),
+		client.Choice.Create().SetProblemTranslation(pt2).SetContent("It allows for temporary inconsistencies but converges over time.").SetIsCorrect(true).SetSeq(2),
+	).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating choices 2: %w", err)
+	}
+
+	// Unit 3: Code Block (Go Channel)
+	u3, err := client.Unit.Create().
+		SetTitle("Go Channel Behavior").
+		SetSeq(3).
+		SetExam(exam).
+		SetSection(section).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating unit 3: %w", err)
+	}
+
+	p3, err := client.Problem.Create().
+		SetUnit(u3).
+		SetType("SOURCE").
+		SetDifficulty(3).
+		SetCreatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating problem 3: %w", err)
+	}
+
+	const codeContent = "What is the output of the following Go code?\n\n```go\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n    ch := make(chan int, 1)\n    ch <- 1\n    fmt.Println(<-ch)\n}\n```"
+
+	pt3, err := client.ProblemTranslation.Create().
+		SetProblem(p3).
+		SetLocale("en").
+		SetTitle("Go Channels").
+		SetContent(codeContent).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating translation 3: %w", err)
+	}
+
+	_, err = client.Choice.CreateBulk(
+		client.Choice.Create().SetProblemTranslation(pt3).SetContent("1").SetIsCorrect(true).SetSeq(1),
+		client.Choice.Create().SetProblemTranslation(pt3).SetContent("Deadlock").SetIsCorrect(false).SetSeq(2),
+		client.Choice.Create().SetProblemTranslation(pt3).SetContent("Runtime Error").SetIsCorrect(false).SetSeq(3),
+	).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating choices 3: %w", err)
 	}
 
 	return nil

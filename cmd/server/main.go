@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"examination/internal/ent"
+	"examination/internal/features/exam/handler"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,51 +11,58 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	_ "modernc.org/sqlite" // Pure Go SQLite driver
+
+	"modernc.org/sqlite"
 )
 
+func init() {
+	sql.Register("sqlite3", &sqlite.Driver{})
+}
+
 func main() {
-	// 1. Initialize DB
+	// 1. Initialize DB (Ent Client)
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
-		dbPath = "examination.db"
+		// Default to local development path inside data directory
+		dbPath = "file:data/local.db?cache=shared&_pragma=foreign_keys(1)"
 	}
 
-	db, err := sql.Open("sqlite", dbPath)
+	client, err := ent.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Fatalf("Failed to open DB: %v", err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	// 2. Setup Router
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	// 3. Health Check (DB Verification)
+	// 3. Health Check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		// Try to write to the DB to ensure it's writable (and Litestream can replicate it)
-		// We use a dedicated health check table.
-		_, err := db.Exec("CREATE TABLE IF NOT EXISTS health_check (id INTEGER PRIMARY KEY);")
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Health Check Failed (Write): %v", err), http.StatusInternalServerError)
+		// Validating DB connection by running a simple query
+		if _, err := client.Exam.Query().Limit(1).Count(r.Context()); err != nil {
+			http.Error(w, fmt.Sprintf("Health Check Failed: %v", err), http.StatusInternalServerError)
 			return
 		}
-
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
-	// 4. Mount Domain Handlers
-	// TODO: Mount feature-specific handlers (e.g., auth, content) here.
+	// 4. Feature Handlers
+	examHandler := handler.NewExamPreviewHandler(client)
+	r.Get("/exams/preview", examHandler.ServeHTTP)
+
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Examination Service - SSR/HTMX Mode"))
 	})
 
-	// Service integration will be re-added when we implement actual features
-	// svc := service.NewServer()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8180" // Default changed to 8180 to avoid conflicts
+	}
 
-	log.Println("Server starting on :8080")
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	log.Printf("Server starting on :%s", port)
+	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatal(err)
 	}
 }

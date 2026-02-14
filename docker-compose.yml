@@ -7,8 +7,9 @@ services:
       dockerfile: Dockerfile.dev
     restart: always
     ports:
-      - "8180:8080"
+      - "8180:8180"
     environment:
+      - PORT=8180
       - DATABASE_URL=sqlite://file:/data/local.db?_pragma=foreign_keys(1)&cache=shared&mode=rwc
       - DB_PATH=/data/local.db
       - SMTP_HOST=mailpit

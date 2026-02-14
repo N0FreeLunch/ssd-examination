@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Preview: {{ .Title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .prose {
+            max-width: none;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 min-h-screen p-8">
+
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-bold text-gray-900">{{ .Title }}</h1>
+            <p class="text-gray-600 mt-2">{{ .Description }}</p>
+            <div class="mt-4 flex justify-center gap-4 text-sm text-gray-500">
+                <span class="flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {{ .TimeLimit }} mins
+                </span>
+                <span class="flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    {{ len .Edges.Sections }} Sections
+                </span>
+            </div>
+        </header>
+
+        <!-- Sections -->
+        {{ range .Edges.Sections }}
+        <div class="mb-12">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">{{ .Title }}</h2>
+
+            <!-- Units -->
+            <div class="space-y-8">
+                {{ range .Edges.Units }}
+                {{ range .Edges.Problems }}
+                {{ range .Edges.Translations }}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition hover:shadow-md">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">{{ .Title }}</h3>
+                        <!-- Markdown Content -->
+                        <div class="hidden raw-markdown">{{ .Content }}</div>
+                        <div class="prose text-gray-700 markdown-content"></div>
+                    </div>
+
+                    <!-- Choices -->
+                    <div class="space-y-3 mt-6">
+                        {{ range .Edges.Choices }}
+                        <label
+                            class="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition group">
+                            <div class="flex items-center h-5">
+                                <input type="radio" name="problem_{{ .ID }}"
+                                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            </div>
+                            <div class="text-sm text-gray-700 group-hover:text-gray-900">
+                                {{ .Content }}
+                            </div>
+                        </label>
+                        {{ end }}
+                    </div>
+                </div>
+                {{ end }}
+                {{ end }}
+                {{ end }} <!-- End Units -->
+            </div>
+        </div>
+        {{ end }} <!-- End Sections -->
+
+        <!-- Navigation Placeholder -->
+        <div class="flex justify-between mt-12 pt-6 border-t border-gray-200">
+            <button
+                class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition">Previous</button>
+            <button
+                class="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-sm transition">Next
+                Section</button>
+        </div>
+    </div>
+
+    <script>
+        // Render Markdown
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.markdown-content').forEach(el => {
+                const raw = el.previousElementSibling.textContent;
+                if (raw) {
+                    el.innerHTML = marked.parse(raw);
+                    // Code highlight could be added here if needed
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
