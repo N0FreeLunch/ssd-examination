@@ -26,3 +26,6 @@ shell:
 
 deploy:
 	@$(WITH_SECRETS) dev "./deploy.sh"
+
+rebuild:
+	@$(WITH_SECRETS) $(ENV) "docker-compose up -d --build"
