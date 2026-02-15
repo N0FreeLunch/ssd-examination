@@ -1,5 +1,6 @@
 .PHONY: seed-admin up down logs shell
-
+WITH_SECRETS := ./tools/with-secrets.sh
+ENV ?= local
 
 # Data Seeding
 seed-admin:
@@ -12,13 +13,16 @@ seed-exam-preview:
 
 # Docker Compose Helpers
 up:
-	docker-compose up -d
+	@$(WITH_SECRETS) $(ENV) "docker-compose up -d"
 
 down:
-	docker-compose down
+	@$(WITH_SECRETS) $(ENV) "docker-compose down"
 
 logs:
 	docker-compose logs -f app
 
 shell:
 	docker exec -it examination-app-local /bin/sh
+
+deploy:
+	@$(WITH_SECRETS) dev "./deploy.sh"

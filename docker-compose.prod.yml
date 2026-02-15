@@ -1,0 +1,58 @@
+services:
+  app:
+    container_name: examination-app
+    build: .
+    restart: always
+    environment:
+      - PORT=8180
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_PATH=/data/local.db
+    volumes:
+      - sqlite-data:/data
+    depends_on:
+      restore-db:
+        condition: service_completed_successfully
+
+  litestream:
+    container_name: examination-litestream
+    image: litestream/litestream:latest
+    command: replicate -config /etc/litestream.yml
+    volumes:
+      - sqlite-data:/data
+      - ./infra/config/litestream.prod.yml:/etc/litestream.yml
+    environment:
+      - LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}
+      - LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}
+      - LITESTREAM_BUCKET=${LITESTREAM_BUCKET}
+    depends_on:
+      restore-db:
+        condition: service_completed_successfully
+
+  restore-db:
+    image: litestream/litestream:latest
+    container_name: examination-db-restore
+    entrypoint: /scripts/restore-db.sh
+    volumes:
+      - sqlite-data:/data
+      - ./infra/config/litestream.prod.yml:/etc/litestream.yml
+      - ./infra/docker/restore-db.sh:/scripts/restore-db.sh:ro
+    environment:
+      - LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}
+      - LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}
+      - LITESTREAM_BUCKET=${LITESTREAM_BUCKET}
+
+  caddy:
+    image: caddy:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from ${DOMAIN_NAME} --to app:8180
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  sqlite-data:
+  caddy_data:
+  caddy_config:
