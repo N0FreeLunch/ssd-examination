@@ -102,10 +102,8 @@ ls -l sdd-examination-spec
 
 ## Running the Application
 
-### Server Execution Guide
-Detailed instructions on how to run and verify the application are located in the specification repository.
+Please refer to the **[Development Guide](DEVELOPMENT.md)** for instructions on how to set up your environment and run the application locally.
 
-> **Note:** Please refer to the file **`RUNNING.md`** inside the **`sdd-examination-spec/`** directory.
-> (Since this directory is a symbolic link to an external repository, direct links may not work in some viewers.)
+> **Note:** Detailed technical specifications and historical context can be found in `sdd-examination-spec/RUNNING.md`.
 
 
