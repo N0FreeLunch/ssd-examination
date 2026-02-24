@@ -26,8 +26,8 @@ echo "📦 Uploading build dependencies..."
 scp -i $KEY Dockerfile $HOST:$REMOTE_DIR/
 scp -i $KEY go.mod go.sum $HOST:$REMOTE_DIR/
 
-# 4. Upload source code (using rsync for efficiency)
-echo "💻 Uploading source code..."
+# 4. Upload source code and tools
+echo "💻 Uploading source code and tools..."
 # Use rsync to exclude unnecessary files
 rsync -avz -e "ssh -i $KEY" \
   --exclude '.git' \
@@ -37,12 +37,19 @@ rsync -avz -e "ssh -i $KEY" \
   --exclude 'node_modules' \
   --exclude '*.test' \
   --exclude 'sdd-exam-key.pem' \
-  cmd internal \
+  cmd internal tools \
   $HOST:$REMOTE_DIR/
 
-echo "✅ All files uploaded successfully!"
-echo "👉 Next steps:"
-echo "   1. SSH into the server: ssh -i $KEY $HOST"
-echo "   2. Go to app directory: cd /app"
-echo "   3. Create .env file with secrets (if not exists)"
-echo "   4. Run: docker compose -f docker-compose.prod.yml up -d --build"
+# 5. Execute deployment on server
+echo "🚀 Running deployment on remote server..."
+echo "   (Using Access Key: ${LITESTREAM_ACCESS_KEY_ID:?LITESTREAM_ACCESS_KEY_ID is missing locally})"
+# Pass Litestream credentials (which have SSM read permissions) to the server
+# so it can fetch the remaining secrets via with-secrets.sh
+ssh -i $KEY $HOST "cd $REMOTE_DIR && \
+  chmod +x tools/with-secrets.sh && \
+  AWS_ACCESS_KEY_ID=$LITESTREAM_ACCESS_KEY_ID \
+  AWS_SECRET_ACCESS_KEY=$LITESTREAM_SECRET_ACCESS_KEY \
+  AWS_DEFAULT_REGION=${AWS_REGION:-ap-northeast-2} \
+  ./tools/with-secrets.sh prod 'docker compose -f docker-compose.prod.yml up -d --build'"
+
+echo "✅ Deployment completed successfully!"

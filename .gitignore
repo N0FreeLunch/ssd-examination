@@ -25,6 +25,7 @@ sqlite-data/
 # Binaries
 /bin/
 /tools/bin/
+/server
 *.exe
 *.dll
 *.so

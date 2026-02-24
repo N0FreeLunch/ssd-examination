@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "backup_bucket" {
-  bucket_prefix = "sdd-exam-backup-"
+  bucket_prefix = "${var.project_name}-backup-"
 }
 
 resource "aws_s3_bucket_versioning" "backup_bucket_ver" {
@@ -11,7 +11,7 @@ resource "aws_s3_bucket_versioning" "backup_bucket_ver" {
 
 # IAM User for Application (Litestream)
 resource "aws_iam_user" "app_user" {
-  name = "sdd-exam-app-user"
+  name = "${var.project_name}-app-user"
 }
 
 resource "aws_iam_access_key" "app_user_key" {
@@ -19,7 +19,7 @@ resource "aws_iam_access_key" "app_user_key" {
 }
 
 resource "aws_iam_user_policy" "app_user_policy" {
-  name = "sdd-exam-app-policy"
+  name = "${var.project_name}-app-policy"
   user = aws_iam_user.app_user.name
 
   policy = jsonencode({
@@ -37,20 +37,23 @@ resource "aws_iam_user_policy" "app_user_policy" {
           aws_s3_bucket.backup_bucket.arn,
           "${aws_s3_bucket.backup_bucket.arn}/*"
         ]
+      },
+      {
+        Action = [
+          "ssm:GetParametersByPath",
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:ssm:*:*:parameter/sdd-exam/*"
+      },
+      {
+        Action = [
+          "kms:Decrypt"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
       }
     ]
   })
-}
-
-output "app_user_access_key" {
-  value = aws_iam_access_key.app_user_key.id
-}
-
-output "app_user_secret_key" {
-  value     = aws_iam_access_key.app_user_key.secret
-  sensitive = true
-}
-
-output "backup_bucket_name" {
-  value = aws_s3_bucket.backup_bucket.bucket
 }
