@@ -43,4 +43,4 @@ else
 fi
 
 echo "🚀 Executing command: $CMD"
-exec env $CMD
+eval "$CMD"

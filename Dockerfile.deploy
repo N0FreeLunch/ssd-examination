@@ -1,0 +1,14 @@
+FROM alpine:3.19
+
+WORKDIR /app
+
+# Install runtime dependencies
+# ca-certificates is needed for HTTPS requests
+RUN apk add --no-cache ca-certificates tzdata sqlite
+
+# Copy pre-built application binary
+COPY server /app/server
+RUN chmod +x /app/server
+
+# Start server directly
+CMD ["/app/server"]

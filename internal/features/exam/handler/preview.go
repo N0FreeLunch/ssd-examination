@@ -8,9 +8,9 @@ import (
 	"examination/internal/ent/problemtranslation"
 	"examination/internal/ent/section"
 	"examination/internal/ent/unit"
+	"examination/internal/features/exam/ui"
 	"html/template"
 	"net/http"
-	"path/filepath"
 )
 
 type ExamPreviewHandler struct {
@@ -53,13 +53,10 @@ func (h *ExamPreviewHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare Template
-	// For simplicity, we parse the template on each request during dev.
-	// In prod, this should be cached.
-	tmplPath := filepath.Join("internal", "features", "exam", "ui", "exam_preview.html")
-	tmpl, err := template.ParseFiles(tmplPath)
+	// Using embedded filesystem
+	tmpl, err := template.ParseFS(ui.FS, "exam_preview.html")
 	if err != nil {
-		http.Error(w, "Failed to parse template: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to parse embedded template: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
