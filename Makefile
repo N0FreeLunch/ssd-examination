@@ -44,3 +44,6 @@ deploy: build-linux
 
 rebuild:
 	@$(WITH_SECRETS) $(ENV) "docker-compose up -d --build"
+
+deploy-local:
+	@go run tools/act-deploy/main.go

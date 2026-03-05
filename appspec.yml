@@ -1,0 +1,21 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /app
+    overwrite: true
+permissions:
+  - object: /app/scripts/deploy
+    pattern: "*.sh"
+    owner: ubuntu
+    group: ubuntu
+    mode: 755
+hooks:
+  ApplicationStop:
+    - location: scripts/deploy/stop_server.sh
+      timeout: 120
+      runas: ubuntu
+  ApplicationStart:
+    - location: scripts/deploy/start_server.sh
+      timeout: 300
+      runas: ubuntu

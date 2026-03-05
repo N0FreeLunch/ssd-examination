@@ -1,0 +1,67 @@
+name: Deploy to AWS Lightsail (Hybrid CI/CD)
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+# TODO: Production deployment (main branch)
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ap-northeast-2
+
+      - name: Fetch Environment Variables from Parameter Store
+        run: |
+          echo "Fetching Parameter Store configurations..."
+          # 실제 구성에서는 필요한 Parameter 값들을 조회하여 .env로 렌더링하거나 빌드에 주입합니다.
+          S3_BUCKET=$(aws ssm get-parameter --name "/sdd-exam/dev/S3_DEPLOY_BUCKET" --with-decryption --query "Parameter.Value" --output text 2>/dev/null || echo "sdd-exam-deploy-bucket")
+          echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build Go Application
+        run: |
+          echo "🔨 Compiling Go application (Linux amd64)..."
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o server ./cmd/server
+
+      # (TBD) Frontend Build (Vite/TS) - 현재 No-Build JS 문서에서 Build JS 도입 후 활성화
+      # - name: Setup Node
+      # - name: Build Frontend
+      #   run: |
+      #     npm ci
+      #     npm run build
+
+      - name: Package Artifact
+        run: |
+          echo "📦 Packaging artifacts for CodeDeploy..."
+          zip -r deploy-artifact.zip server appspec.yml scripts/ docker-compose.*.yml tools/ infra/ || echo "Optional folders skipped"
+
+      - name: Upload Artifact to S3
+        run: |
+          echo "☁️ Uploading artifact to S3 bucket..."
+          aws s3 cp deploy-artifact.zip s3://${{ env.S3_BUCKET }}/deploy-artifact.zip --region ap-northeast-2
+
+      - name: Trigger AWS CodeDeploy
+        run: |
+          echo "🚀 Triggering AWS CodeDeploy deployment..."
+          aws deploy create-deployment \
+            --application-name examination-app \
+            --deployment-group-name examination-dev-group \
+            --s3-location bucket=${{ env.S3_BUCKET }},key=deploy-artifact.zip,bundleType=zip \
+            --region ap-northeast-2
