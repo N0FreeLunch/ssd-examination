@@ -43,8 +43,6 @@ vendor/
 # ------------------------------------------------------------------------------
 # 3. Environment & Symlinks
 # ------------------------------------------------------------------------------
-# Spec Symlinks (Managed externally)
-sdd-examination-spec
 
 # Environment variables (Safety check)
 .env
