@@ -100,6 +100,13 @@ ls -l sdd-examination-spec
 ```
 
 
+## Directory Structure
+- **sdd-examination-spec/**: A symbolic link to the specification repository. Contains requirements, discussions, and Architectural Decision Records (ADRs).
+- **references/**: Manages the background context considered during design and implementation. This folder is excluded from Git tracking and managed locally per developer environment. For detailed design rationale, please refer to `sdd-examination-spec/adrs/`.
+- **cmd/**: Application entry points (e.g., server, CLI tools).
+- **internal/**: Core business logic and private application code.
+- **infra/**: Terraform and infrastructure scripts.
+
 ## Running the Application
 
 Please refer to the **[Development Guide](DEVELOPMENT.md)** for instructions on how to set up your environment and run the application locally.
