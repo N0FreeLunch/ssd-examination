@@ -21,7 +21,13 @@ resource "aws_lightsail_instance" "server" {
   bundle_id         = "nano_3_0"
   key_pair_name     = aws_lightsail_key_pair.kp.name
 
-  user_data = file("${path.module}/user_data.sh")
+  user_data = templatefile("${path.module}/user_data.sh", {
+    project_name          = var.project_name
+    aws_region            = var.aws_region
+    aws_access_key_id     = aws_iam_access_key.app_user_key.id
+    aws_secret_access_key = aws_iam_access_key.app_user_key.secret
+    iam_user_arn          = aws_iam_user.app_user.arn
+  })
 }
 
 resource "aws_lightsail_static_ip" "static_ip" {
