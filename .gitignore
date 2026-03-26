@@ -31,6 +31,9 @@ sqlite-data/
 *.so
 *.dylib
 
+# External Specification (Symlink)
+sdd-examination-spec
+
 # Test Output
 *.out
 *.test

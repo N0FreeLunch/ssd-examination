@@ -6,9 +6,11 @@ This document defines the **absolute rules** that govern the development and mai
 1.  **External Specifications**: The requirements, domain logic, and API designs for this project are strictly defined in an **external repository**, accessible via the `./sdd-examination-spec` folder in the project root.
 2.  **No Spec Commits**: You **MUST NEVER** commit the contents of the `sdd-examination-spec` folder to this repository. The specification repository must remain a separate entity to prevent data duplication and versioning conflicts.
 3.  **Mandatory Skills**: AI assistants MUST use the following skills as needed:
+    *   `context-awareness`: **CRITICAL**: Use immediately at the start of every session to discover and acknowledge the project structure (Main vs. Spec).
     *   `spec-management`: To navigate and understand specification documents.
     *   `git-interop`: When performing operations across multiple git repositories (specifically using `-C`).
     *   `terminal-etiquette`: To ensure correct terminal usage and directory context management.
+    *   `commit-policy`: To follow the project's language policy (English Prime) and commit guidelines.
 4.  **Git Ignore & Verification**: 
     *   The symbolic link `sdd-examination-spec` must always be present in `.gitignore`.
     *   **Pre-Commit Check**: Before running `git add .`, you MUST check `git status` to ensure `sdd-examination-spec` is NOT being tracked or staged. If it appears as `modified` or `new file`, you MUST untrack it (`git rm --cached sdd-examination-spec`) immediately.

@@ -11,9 +11,11 @@ To maintain agent skills as core project assets, they are primarily stored withi
 
 ## Available Skills
 
+- **context-awareness**: **CRITICAL**: Use at the start of every session to discover and acknowledge the project structure (Main vs. Spec).
 - **terminal-etiquette**: Rules and best practices for AI agents to execute terminal commands, including correct Cwd handling and command sequencing.
 - **git-interop**: A set of git commands and best practices for managing multiple repositories within a project, specifically using the -C option.
-- **spec-management**: Manages and interacts with the specification documents in the project. This skill focuses on the content, structure, and intent of the specification repository.
+- **spec-management**: Focused on the content, structure, and intent of the specification repository.
+- **commit-policy**: Guidelines for language usage (English Prime vs Spec Korean) and committing code in this project.
 
 Please refer to the `.agents/skills/` directory for the source of truth for all agent skills.
 
