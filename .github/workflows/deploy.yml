@@ -11,6 +11,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      AWS_PAGER: ""
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -23,12 +26,39 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ap-northeast-2
 
-      - name: Fetch Environment Variables from Parameter Store
+      - name: Install AWS CLI (for local act)
+        if: ${{ env.ACT }}
         run: |
-          echo "Fetching Parameter Store configurations..."
-          # 실제 구성에서는 필요한 Parameter 값들을 조회하여 .env로 렌더링하거나 빌드에 주입합니다.
-          S3_BUCKET=$(aws ssm get-parameter --name "/sdd-exam/dev/S3_DEPLOY_BUCKET" --with-decryption --query "Parameter.Value" --output text 2>/dev/null || echo "sdd-exam-deploy-bucket")
+          apt-get update && apt-get install -y curl unzip sudo jq
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+          else
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          fi
+          unzip -q awscliv2.zip
+          sudo ./aws/install
+          aws --version
+
+      - name: Fetch Environment Variables from S3 (Metadata Registry)
+        run: |
+          echo "☁️ Fetching deployment metadata from S3..."
+          # Fetch metadata bucket from SSM (as a transition) or use a secret/hardcoded value
+          # In the new strategy, we should use secrets.S3_METADATA_BUCKET
+          META_BUCKET="sdd-exam-deploy-artifacts-dev-992481306230"
+          
+          aws s3 cp s3://${META_BUCKET}/deploy-config.json deploy-config.json
+          
+          echo "⚙️ Exporting metadata to GITHUB_ENV..."
+          S3_BUCKET=$(jq -r .S3DeployBucket deploy-config.json)
+          STATIC_IP=$(jq -r .LightsailStaticIP deploy-config.json)
+          APP_NAME=$(jq -r .CodeDeployApplication deploy-config.json)
+          DG_NAME=$(jq -r .CodeDeployDeploymentGroup deploy-config.json)
+          
           echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
+          echo "DEPLOY_HOST=$STATIC_IP" >> $GITHUB_ENV
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+          echo "DG_NAME=$DG_NAME" >> $GITHUB_ENV
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -61,7 +91,7 @@ jobs:
         run: |
           echo "🚀 Triggering AWS CodeDeploy deployment..."
           aws deploy create-deployment \
-            --application-name examination-app \
-            --deployment-group-name examination-dev-group \
+            --application-name ${{ env.APP_NAME }} \
+            --deployment-group-name ${{ env.DG_NAME }} \
             --s3-location bucket=${{ env.S3_BUCKET }},key=deploy-artifact.zip,bundleType=zip \
             --region ap-northeast-2
