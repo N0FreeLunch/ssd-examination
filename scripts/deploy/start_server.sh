@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+export AWS_DEFAULT_REGION=ap-northeast-2
 
 echo "🚀 [ApplicationStart] Starting new application container..."
 cd /app

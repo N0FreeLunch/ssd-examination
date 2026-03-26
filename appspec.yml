@@ -5,11 +5,11 @@ files:
     destination: /app
     overwrite: true
 permissions:
-  - object: /app/scripts/deploy
-    pattern: "*.sh"
+  - object: /app
     owner: ubuntu
     group: ubuntu
     mode: 755
+    recursive: true
 hooks:
   ApplicationStop:
     - location: scripts/deploy/stop_server.sh
