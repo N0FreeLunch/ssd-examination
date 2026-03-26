@@ -1,5 +1,6 @@
 resource "aws_s3_bucket" "backup_bucket" {
   bucket_prefix = "${var.project_name}-backup-"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "backup_bucket_ver" {
@@ -13,7 +14,8 @@ resource "aws_s3_bucket_versioning" "backup_bucket_ver" {
 # Deployment Artifacts & Metadata Bucket
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_s3_bucket" "deploy_bucket" {
-  bucket = "sdd-exam-deploy-artifacts-dev-992481306230"
+  bucket        = "sdd-exam-deploy-artifacts-dev-992481306230"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "deploy_bucket_ver" {

@@ -32,5 +32,13 @@ This document defines the **absolute rules** that govern the development and mai
 
 5.  **Coding Standards**: All code generation and modification must adhere to the standards defined in `skills.md` located in the `sdd-examination-spec` directory.
 
-## Article V. Amendments
+## Article VI. Repository Privacy & Hierarchy
+1.  **Repository Distinction**:
+    - **Core Repository (Public)**: Contains source code, implementation, and minimum setup required to run the project. No sensitive or detailed operational documentation should be stored here.
+    - **Specification Repository (Private)**: Contains all specifications, sensitive infrastructure details, troubleshooting guides, and operational guidelines. This repository must remain private.
+2.  **Content Separation**:
+    - Detailed operational manuals, deep troubleshooting logs, and sensitive infrastructure configurations must be kept within the Specification repository.
+    - The Core repository should only include the "Minimum Viable Setup" (e.g., local running instructions) necessary for any contributor to start the application.
+
+## Article VII. Amendments
 1.  **User Confirmation Required**: Any changes to this **CONSTITUTION.md** file require explicit approval from the USER. AI assistants must not modify this file without a direct request or confirmation.
