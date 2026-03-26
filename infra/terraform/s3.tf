@@ -53,7 +53,40 @@ resource "aws_iam_user_policy" "app_user_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action   = "*"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:DeleteObject"
+        ]
+        Effect = "Allow"
+        Resource = [
+          aws_s3_bucket.backup_bucket.arn,
+          "${aws_s3_bucket.backup_bucket.arn}/*",
+          aws_s3_bucket.deploy_bucket.arn,
+          "${aws_s3_bucket.deploy_bucket.arn}/*"
+        ]
+      },
+      {
+        Action = [
+          "ssm:GetParametersByPath",
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:ssm:*:*:parameter/sdd-exam/*"
+      },
+      {
+        Action = [
+          "codedeploy:*"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action = [
+          "kms:Decrypt"
+        ]
         Effect   = "Allow"
         Resource = "*"
       }
