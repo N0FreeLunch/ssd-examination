@@ -59,7 +59,7 @@ func main() {
 
 	// 3. Trigger the local act pipeline
 	fmt.Println("🚀 Triggering local act pipeline...")
-	actCmd := exec.Command("act", "workflow_dispatch", "-W", ".github/workflows/deploy.yml", "--secret-file", tmpFileName)
+	actCmd := exec.Command("act", "workflow_dispatch", "-W", ".github/workflows/deploy.yml", "--secret-file", tmpFileName, "--env", "ACT=true")
 	actCmd.Stdout = os.Stdout
 	actCmd.Stderr = os.Stderr
 	actCmd.Stdin = os.Stdin

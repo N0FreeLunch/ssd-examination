@@ -11,9 +11,11 @@ To maintain agent skills as core project assets, they are primarily stored withi
 
 ## Available Skills
 
-- **spec-management**: Instructions on how to access and manage the specification repository. Accessible via symbolic link in this directory.
+- **terminal-etiquette**: Rules and best practices for AI agents to execute terminal commands, including correct Cwd handling and command sequencing.
+- **git-interop**: A set of git commands and best practices for managing multiple repositories within a project, specifically using the -C option.
+- **spec-management**: Manages and interacts with the specification documents in the project. This skill focuses on the content, structure, and intent of the specification repository.
 
-Please refer to the `sdd-examination-spec/.agents/skills/` directory for the source of truth for all agent skills.
+Please refer to the `.agents/skills/` directory for the source of truth for all agent skills.
 
 ## Security & Path Policy
 

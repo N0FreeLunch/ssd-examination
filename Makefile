@@ -1,6 +1,16 @@
-.PHONY: seed-admin up down logs shell
+.PHONY: seed-admin up down logs shell verify-aws
 WITH_SECRETS := ./tools/with-secrets.sh
 ENV ?= local
+
+# Load .env file (optional if not present)
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
+# AWS Context Verification
+verify-aws:
+	@go run tools/aws-ctx/main.go
 
 # Data Seeding
 seed-admin:
@@ -15,7 +25,7 @@ build-seeder-linux:
 	@echo "🔨 Building the seeder binary for Linux (amd64)..."
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o seeder ./cmd/seeder/main.go
 
-seed-dev: build-seeder-linux
+seed-dev: verify-aws build-seeder-linux
 	@echo "📤 Uploading seeder to dev server and executing..."
 	@HOST=$$(aws ssm get-parameter --name "/sdd-exam/dev/DEPLOY_HOST" --with-decryption --query "Parameter.Value" --output text) && \
 	scp -i sdd-exam-key.pem seeder "$$HOST:/app/seeder" && \
@@ -23,10 +33,10 @@ seed-dev: build-seeder-linux
 	@echo "✅ Database seeded successfully on dev server."
 
 # Docker Compose Helpers
-up:
+up: verify-aws
 	@$(WITH_SECRETS) $(ENV) "docker-compose up -d"
 
-down:
+down: verify-aws
 	@$(WITH_SECRETS) $(ENV) "docker-compose down"
 
 logs:
@@ -39,11 +49,14 @@ build-linux:
 	@echo "🔨 Building the server binary for Linux (amd64)..."
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o server ./cmd/server
 
-deploy: build-linux
+deploy: build-linux verify-aws
 	@$(WITH_SECRETS) dev "./deploy.sh"
 
-rebuild:
+rebuild: verify-aws
 	@$(WITH_SECRETS) $(ENV) "docker-compose up -d --build"
 
-deploy-local:
+deploy-local: verify-aws
 	@go run tools/act-deploy/main.go
+
+infra-setup-remote: verify-aws
+	@./scripts/setup-remote-state.sh
